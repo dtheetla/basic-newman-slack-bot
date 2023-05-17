@@ -1,3 +1,4 @@
+require('dotenv').config()
 const axios      = require('axios')
 const express    = require('express')
 const bodyParser = require('body-parser')
@@ -23,7 +24,7 @@ class TestRunContext {
         this.failures         = newmanResult.run.failures
         this.skipped          = newmanResult.skippedTests
     }
-    
+
     get percentagePassed() {
         return (this.testResultTotal * 100 / (this.testResultTotal + this.testResultFailed)).toFixed(2)
     }
@@ -31,7 +32,7 @@ class TestRunContext {
     get envFileName() {
         return this.environment === undefined ? "No Environment file specified for the Newman Run" : this.environment
     }
-    
+
     get skippedList() {
         if(this.skipped === undefined) {
             return "No Skipped Tests"
@@ -54,7 +55,7 @@ class TestRunContext {
         else {
             return  this.testResultTotal - this.skipped.length
         }
-        
+
     }
 
     get result() {
@@ -99,7 +100,7 @@ class TestRunContext {
                             "title": "No. Of Assertions",
                             "value": `${this.totalAssertions}`,
                             "short": true
-                            
+
                         },
                         {
                             "title": "No. Of Failures",
@@ -132,9 +133,11 @@ class TestRunContext {
 }
 
 let executeNewman = (environmentFile, iterationCount) => {
+    // change
+    // collection: './collections/Alarm-mini-postman-collection.json',
     return new Promise((resolve, reject) => {
         newman.run({
-            collection: './collections/Restful_Booker_Collection.json',
+            collection: process.env["postman_collection_loc"],
             environment: environmentFile,
             iterationCount: iterationCount,
             reporters: ['htmlextra'],
@@ -177,28 +180,29 @@ function InvalidName(responseURL, message, res) {
     return;
 }
 
-app.post("/newmanRun", (req, res) => {   
-    
+app.post("/newmanRun", (req, res) => {
+
     const responseURL = req.body.response_url
     const channelText = req.body.text
 
     const enteredEnv     = (channelText).split(" ")[0]
     const iterationCount = parseInt((channelText).split(" ")[1])
-    
-    const filename = `./environments/${enteredEnv}_Restful_Booker_Environment.json`
-    
+    //change
+    // const filename = `./environments/AlarmQA.postman_environment.json`
+    const filename = process.env["postman_environ_loc"]
+
     const fileNameCheck = fs.existsSync(filename)
 
     if (channelText.length === 0) {
-        
+
         message = "Please enter an valid *Environment* name."
-        
+
         return InvalidName(responseURL, message, res)
 
     } else if (fileNameCheck === false) {
-        
-        message = `Could not find the *${path.basename(filename)}* environment file. Please try again.` 
-        
+
+        message = `Could not find the *${path.basename(filename)}* environment file. Please try again.`
+
         return InvalidName(responseURL, message, res)
 
     } else {
@@ -209,7 +213,7 @@ app.post("/newmanRun", (req, res) => {
         method: 'post',
         url: `${responseURL}`,
         headers: { "Content-Type": "application/json" },
-        data: { 
+        data: {
             "response_type": "in_channel",
             "attachments": [
                 {
@@ -241,7 +245,7 @@ app.post("/newmanRun", (req, res) => {
             method: 'post',
             url: `${responseURL}`,
             headers: { "Content-Type": "application/json" },
-            data: { 
+            data: {
                 "response_type": "in_channel",
                 "attachments": [
                     {
